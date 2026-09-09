@@ -72,7 +72,8 @@ section[data-testid="stSidebar"] {
 .brand-title { font-size: 1.8rem; font-weight: 700; margin: 0; line-height: 1.1; color: #ffffff; letter-spacing: 0.05em; }
 .brand-subtitle { font-size: 0.85rem; font-weight: 500; color: #8b949e; text-transform: uppercase; letter-spacing: 0.08em; margin-top: 0.2rem; }
 .brand-micro { font-size: 0.7rem; color: #6e7681; font-family: 'JetBrains Mono', monospace; }
-.header-meta { text-align: right; font-family: 'JetBrains Mono', monospace; font-size: 0.75rem; color: #8b949e; }
+.header-meta { text-align: left; font-family: 'JetBrains Mono', monospace; font-size: 0.75rem; color: #8b949e; background: #16191d; padding: 6px 12px; border: 1px solid #2d3139; border-radius: 4px; }
+.header-meta .meta-key { display: inline-block; min-width: 85px; color: #6e7681; }
 .status-indicator { color: #3fb950; font-weight: bold; }
 
 .section-title {
@@ -183,63 +184,17 @@ with st.sidebar:
     layer     = st.selectbox("Map Layer", ["Rainfall", "Temperature", "Wind"])
     lead_time = st.selectbox("Lead Time", ["+06h", "+12h", "+24h", "+48h", "+72h"])
 
-    st.markdown("<br>", unsafe_allow_html=True)
-    st.markdown('<div class="section-title">DATA SOURCES</div>', unsafe_allow_html=True)
 
-    sources = [
-        {"name": "NOAA GFS",    "res": "0.25°", "ts": "12:00Z", "status": "Available"},
-        {"name": "ECMWF HRES",  "res": "9 km",  "ts": "12:00Z", "status": "Available"},
-        {"name": "ECMWF ENS",   "res": "18 km", "ts": "12:00Z", "status": "Available"},
-        {"name": "ERA5",        "res": "0.25°", "ts": "T-5 days","status": "Reference"},
-    ]
-    src_html = ""
-    for s in sources:
-        clr = "#3fb950" if s["status"] == "Available" else "#8b949e"
-        src_html += f"""
-        <div style="font-size:0.8rem; margin-bottom:10px;">
-            <div style="font-weight:600; color:#c9d1d9;">{s['name']}
-                <span style="float:right; color:{clr}; font-size:0.7rem;">{s['status']}</span>
-            </div>
-            <div style="color:#8b949e; font-family:'JetBrains Mono', monospace; font-size:0.7rem;">
-                RES: {s['res']} | TS: {s['ts']}
-            </div>
-        </div>"""
-    st.markdown(src_html, unsafe_allow_html=True)
-
-    st.markdown('<div class="section-title">ACTIONS</div>', unsafe_allow_html=True)
-
-    run_feedback = st.button("▶ Run Feedback Loop", use_container_width=True)
-    if run_feedback:
-        with st.spinner("Running feedback loop..."):
-            try:
-                from src.feedback.updater import FeedbackUpdater
-                updater = FeedbackUpdater(observation_source="synthetic")
-                rep = updater.run()
-                st.success(f"✓ Feedback complete! {len(rep.get('verification', {}))} variables verified.")
-                # Clear cache so dashboard refreshes
-                load_data.clear()
-                st.rerun()
-            except Exception as e:
-                st.error(f"Error: {e}")
 
 # ─────────────────────────────────────────────────────────────────────────────
 # HEADER
 # ─────────────────────────────────────────────────────────────────────────────
-now_utc   = datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S UTC")
-init_time = (datetime.utcnow() - timedelta(hours=6)).strftime("%Y-%m-%d 12:00:00 UTC")
-
-st.markdown(f"""
+st.markdown("""
 <div class="header-container">
     <div>
         <h1 class="brand-title">ASTRA</h1>
         <div class="brand-subtitle">Adaptive System for Temperature, Rainfall &amp; Analytics</div>
         <div class="brand-micro">AI–NWP Adaptive Forecast Blending Framework · SIH 2026 · MoES / NCMRWF</div>
-    </div>
-    <div class="header-meta">
-        <div>INIT: {init_time}</div>
-        <div>SYS_TIME: {now_utc}</div>
-        <div>REGION: {region.upper()}</div>
-        <div style="margin-top:4px;">STATUS: <span class="status-indicator">OPERATIONAL</span></div>
     </div>
 </div>
 """, unsafe_allow_html=True)
@@ -465,7 +420,10 @@ with table_col:
         st.markdown('<div class="section-title">CATEGORICAL METRICS (≥2.5 mm)</div>', unsafe_allow_html=True)
         cat_cols = ["POD", "FAR", "CSI"]
         cat_df = skill_df[[c for c in cat_cols if c in skill_df.columns]].copy()
-        st.dataframe(cat_df.round(3), use_container_width=True)
+        cat_formatted = cat_df.apply(lambda col: col.map(lambda v: f"{float(v):.3f}" if pd.notnull(v) and str(v).strip() != "" else "N/A"))
+        st.dataframe(cat_formatted, use_container_width=True)
+        if cat_df.isnull().any().any():
+            st.caption("ℹ️ *N/A: No rain events ≥ 2.5 mm observed in this evaluation window.*")
 
     st.markdown(f'<div class="section-title">UNCERTAINTY SPREAD ({layer.upper()})</div>', unsafe_allow_html=True)
     valid_spread = spread[np.isfinite(spread)]
@@ -637,17 +595,6 @@ with conf_col:
         )
         st.plotly_chart(fig_radar, use_container_width=True, config={"displayModeBar": False})
 
-    st.markdown(f"""
-    <div style="padding:10px;background:#1c1f24;border:1px solid #30363d;font-size:0.82rem;margin-top:8px;">
-        <div style="color:#8b949e;margin-bottom:6px;">OVERALL SCORE</div>
-        <div style="font-size:2rem;font-weight:700;color:{conf_color};font-family:'JetBrains Mono',monospace;">
-            {conf_score:.0f}%
-        </div>
-        <div style="color:{conf_color};font-size:0.8rem;margin-top:2px;">{conf_level} CONFIDENCE</div>
-        <div style="color:#6e7681;font-size:0.72rem;margin-top:4px;">
-            Based on model agreement, ensemble spread, lead-time decay, and historical skill.
-        </div>
-    </div>""", unsafe_allow_html=True)
 
 with extreme_col:
     st.markdown('<div class="section-title">EXTREME WEATHER GUIDANCE</div>', unsafe_allow_html=True)
@@ -722,90 +669,7 @@ with extreme_col:
         <tr><td style="padding:4px 5px;">High Wind</td><td style="text-align:right;font-family:'JetBrains Mono',monospace;">&gt;15 m/s</td><td style="text-align:right;color:#d29922;">ORANGE</td></tr>
     </table>""", unsafe_allow_html=True)
 
-# ─────────────────────────────────────────────────────────────────────────────
-# ROW 5: FEEDBACK LOOP VISUALIZER
-# ─────────────────────────────────────────────────────────────────────────────
-st.markdown('<div class="section-title">AUTOMATED FEEDBACK &amp; CONTINUOUS LEARNING LOOP</div>', unsafe_allow_html=True)
 
-fb_step_col, fb_detail_col = st.columns([1.5, 2.5])
-
-with fb_step_col:
-    steps = [
-        ("1", "New Observation Retrieved",     "Synthetic proxy (ERA5-like) for demo; real obs in production"),
-        ("2", "Forecast vs Obs Compared",      "Per-grid-point RMSE/MAE/Bias/POD/FAR/CSI computed"),
-        ("3", "Skill History Updated",         "Rolling 30-cycle window updated in data/skill_history.csv"),
-        ("4", "Adaptive Weights Updated",      "Exponential smoothing (α=0.2) nudges HRES/GFS weight"),
-        ("5", "Updated Weights Persisted",     "data/learned_weights_*.csv overwritten"),
-        ("6", "Report Generated",              "data/feedback_report.json consumed by this dashboard"),
-    ]
-    fb_completed = feedback_dict is not None
-    steps_html = ""
-    for num, label, desc in steps:
-        done = fb_completed
-        cls_box = "feedback-step feedback-step-done" if done else "feedback-step"
-        cls_num = "step-num step-num-done" if done else "step-num"
-        icon = "✓" if done else num
-        steps_html += f"""
-        <div class="{cls_box}">
-            <span class="{cls_num}">{icon}</span>
-            <div>
-                <div class="step-label">{label}</div>
-                <div style="font-size:0.72rem;color:#6e7681;">{desc}</div>
-            </div>
-        </div>"""
-    st.markdown(steps_html, unsafe_allow_html=True)
-
-with fb_detail_col:
-    if feedback_dict:
-        gen_at = feedback_dict.get("generated_at", "N/A")
-        is_real = feedback_dict.get("is_real_data", False)
-        data_badge = "🟢 REAL DATA" if is_real else "🟡 SYNTHETIC / DEMO DATA"
-
-        st.markdown(f"""
-        <div style="padding:10px 12px;background:#1c1f24;border:1px solid #30363d;margin-bottom:10px;font-size:0.82rem;">
-            <div style="display:flex;justify-content:space-between;">
-                <span style="color:#8b949e;">Last Feedback Run</span>
-                <span style="font-family:'JetBrains Mono',monospace;color:#c9d1d9;">{gen_at[:19].replace('T',' ')} UTC</span>
-            </div>
-            <div style="display:flex;justify-content:space-between;margin-top:4px;">
-                <span style="color:#8b949e;">Data Source</span>
-                <span style="color:#d29922;">{data_badge}</span>
-            </div>
-        </div>""", unsafe_allow_html=True)
-
-        verif = feedback_dict.get("verification", {})
-        if verif:
-            rows = []
-            for var, m in verif.items():
-                rows.append({
-                    "Variable": var.upper(),
-                    "RMSE":     f"{m.get('RMSE', 0):.4f}" if m.get("RMSE") else "–",
-                    "MAE":      f"{m.get('MAE', 0):.4f}"  if m.get("MAE")  else "–",
-                    "Bias":     f"{m.get('Bias', 0):+.4f}" if m.get("Bias") is not None else "–",
-                    "POD":      f"{m.get('POD', '–')}" if "POD" in m else "–",
-                    "CSI":      f"{m.get('CSI', '–')}" if "CSI" in m else "–",
-                })
-            st.dataframe(pd.DataFrame(rows), hide_index=True, use_container_width=True)
-
-        wu = feedback_dict.get("weight_updates", {})
-        if wu:
-            st.markdown("<div style='font-size:0.8rem;color:#8b949e;margin-top:8px;'>UPDATED WEIGHTS AFTER THIS CYCLE</div>", unsafe_allow_html=True)
-            wrows = []
-            for var, info in wu.items():
-                wrows.append({
-                    "Variable": var.upper(),
-                    "ECMWF HRES": f"{info.get('ECMWF HRES', 50)}%",
-                    "NOAA GFS":   f"{info.get('NOAA GFS', 50)}%",
-                    "HRES RMSE":  info.get("HRES RMSE", "–"),
-                    "GFS RMSE":   info.get("GFS RMSE",  "–"),
-                })
-            st.dataframe(pd.DataFrame(wrows), hide_index=True, use_container_width=True)
-    else:
-        st.markdown("""
-        <div style="padding:16px;background:#1c1f24;border:1px dashed #30363d;text-align:center;color:#6e7681;font-size:0.85rem;">
-            No feedback data yet.<br>
-            Click <strong style="color:#58a6ff;">"▶ Run Feedback Loop"</strong> in the sidebar to start the learning cycle.
-        </div>""", unsafe_allow_html=True)
 
 # ─────────────────────────────────────────────────────────────────────────────
 # ROW 6: MODEL COMPARISON CHARTS

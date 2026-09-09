@@ -1,64 +1,64 @@
 {
-  "generated_at": "2026-09-05T11:45:35.397751Z",
+  "generated_at": "2026-09-09T15:48:00.027674Z",
   "observation_source": "synthetic",
   "is_real_data": false,
   "verification": {
     "tp": {
-      "RMSE": 0.00175,
-      "MAE": 0.00135,
-      "Bias": -0.00016,
+      "RMSE": 0.00176,
+      "MAE": 0.00133,
+      "Bias": -0.00033,
       "Correlation": 0.99991,
-      "Skill Score": 0.98625,
+      "Skill Score": 0.98619,
       "n_points": 12769,
-      "POD": 0.953,
-      "FAR": 0.004,
-      "CSI": 0.95,
-      "FBIAS": 0.956,
-      "F1": 0.974,
+      "POD": 0.939,
+      "FAR": 0.002,
+      "CSI": 0.937,
+      "FBIAS": 0.941,
+      "F1": 0.967,
       "threshold_mm": 2.5,
-      "n_events_obs": 9496,
-      "hits": 9048,
-      "misses": 448,
-      "false_alarms": 33,
+      "n_events_obs": 9654,
+      "hits": 9061,
+      "misses": 593,
+      "false_alarms": 20,
       "narrative": "Blended RMSE=0.0018. Adaptive weights will be further refined next cycle."
     },
     "t2m": {
-      "RMSE": 0.02915,
-      "MAE": 0.02298,
-      "Bias": -0.00263,
+      "RMSE": 0.02928,
+      "MAE": 0.0239,
+      "Bias": 0.00078,
       "Correlation": 1.0,
-      "Skill Score": 0.99712,
+      "Skill Score": 0.99711,
       "n_points": 12769,
-      "narrative": "Blended RMSE=0.0292. Adaptive weights will be further refined next cycle."
+      "narrative": "Blended RMSE=0.0293. Adaptive weights will be further refined next cycle."
     },
     "wind": {
-      "RMSE": 0.01894,
-      "MAE": 0.0149,
-      "Bias": 0.00034,
+      "RMSE": 0.0183,
+      "MAE": 0.01431,
+      "Bias": 0.00293,
       "Correlation": 0.99996,
-      "Skill Score": 0.99066,
+      "Skill Score": 0.99096,
       "n_points": 12769,
-      "narrative": "Blended RMSE=0.0189. Adaptive weights will be further refined next cycle."
+      "narrative": "Blended RMSE=0.0183. Adaptive weights will be further refined next cycle."
     }
   },
   "weight_updates": {
     "tp": {
-      "ECMWF HRES": 72.2,
-      "NOAA GFS": 27.8,
-      "HRES RMSE": 0.1564,
-      "GFS RMSE": 1.9958
+      "ECMWF HRES": 87.3,
+      "NOAA GFS": 12.7,
+      "HRES RMSE": 0.1566,
+      "GFS RMSE": 1.9957
     },
     "t2m": {
-      "ECMWF HRES": 70.2,
-      "NOAA GFS": 29.8,
-      "HRES RMSE": 0.3849,
-      "GFS RMSE": 3.0541
+      "ECMWF HRES": 83.9,
+      "NOAA GFS": 16.1,
+      "HRES RMSE": 0.3869,
+      "GFS RMSE": 3.0554
     },
     "wind": {
-      "ECMWF HRES": 53.6,
-      "NOAA GFS": 46.4,
-      "HRES RMSE": 0.8586,
-      "GFS RMSE": 1.3008
+      "ECMWF HRES": 58.5,
+      "NOAA GFS": 41.5,
+      "HRES RMSE": 0.8597,
+      "GFS RMSE": 1.3032
     }
   },
   "feedback_cycle": {
